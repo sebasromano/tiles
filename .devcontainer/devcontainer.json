@@ -1,11 +1,29 @@
 {
-  "name": "Node 24",
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:24-bookworm",
-  "features": {},
-  "customizations": {
-    "vscode": {
-      "extensions": []
+    "name": "tiles",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "forwardPorts": [3003],
+    "portsAttributes": {
+        "3003": {
+            "label": "App",
+            "onAutoForward": "notify"
+        }
+    },
+    "remoteUser": "root",
+    "mounts": [
+        "source=${localEnv:HOME}/.config/gcloud,target=/home/node/.config/gcloud,type=bind,consistency=cached"
+    ],
+    "containerEnv": {
+        "CLOUDSDK_CONFIG": "/home/node/.config/gcloud",
+        "HOST": "0.0.0.0",
+        "PORT": "3003"
+    },
+    "postCreateCommand": "npm ci",
+    "customizations": {
+        "vscode": {
+            "extensions": [],
+            "settings": {}
+        }
     }
-  },
-  "remoteUser": "root"
 }
