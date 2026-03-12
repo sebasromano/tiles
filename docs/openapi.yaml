@@ -1,0 +1,130 @@
+openapi: 3.0.3
+info:
+    title: Tiles API
+    description: MVP of the Tiles API
+    version: 1.0.0
+
+paths:
+    /pois:
+        get:
+            summary: Get points of interest
+            description: Returns points from a BigQuery table as a GeoJSON FeatureCollection. Only the geometry column is queried; each feature has a Point geometry with coordinates [longitude, latitude] and no properties.
+            operationId: getPois
+            parameters:
+                - name: tableFqn
+                  in: query
+                  required: true
+                  description: Fully qualified name of the BigQuery table (e.g. project.dataset.table).
+                  schema:
+                      type: string
+                      example: "my-project.my_dataset.my_poi_table"
+                - name: geoColumn
+                  in: query
+                  required: false
+                  description: Name of the geometry column in the table. Defaults to "geom".
+                  schema:
+                      type: string
+                      default: "geom"
+            responses:
+                "200":
+                    description: GeoJSON FeatureCollection of points.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GeoJSONFeatureCollectionPoint"
+                            example:
+                                type: "FeatureCollection"
+                                features:
+                                    - type: "Feature"
+                                      geometry:
+                                          type: "Point"
+                                          coordinates: [100.0, 0.0]
+                                    - type: "Feature"
+                                      geometry:
+                                          type: "Point"
+                                          coordinates:
+                                              [
+                                                  -2.60314290410708,
+                                                  51.4411264220088,
+                                              ]
+                "400":
+                    description: Bad request (validation errors for query parameters).
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ValidationErrorResponse"
+                "500":
+                    description: Server error (e.g. BigQuery or table access failure).
+
+components:
+    schemas:
+        ValidationFieldError:
+            type: object
+            required:
+                - code
+                - message
+            properties:
+                code:
+                    type: string
+                    description: Machine-readable error code (e.g. required, invalid_format).
+                message:
+                    type: string
+                    description: Human-readable error message.
+        ValidationErrorResponse:
+            type: object
+            required:
+                - errors
+            properties:
+                errors:
+                    type: object
+                    description: Map of field names to lists of validation errors.
+                    additionalProperties:
+                        type: array
+                        items:
+                            $ref: "#/components/schemas/ValidationFieldError"
+                    example:
+                        tableFqn:
+                            - code: "required"
+                              message: "tableFqn is required"
+        GeoJSONFeatureCollectionPoint:
+            type: object
+            required:
+                - type
+                - features
+            properties:
+                type:
+                    type: string
+                    enum: ["FeatureCollection"]
+                features:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/GeoJSONFeaturePoint"
+
+        GeoJSONFeaturePoint:
+            type: object
+            required:
+                - type
+                - geometry
+            properties:
+                type:
+                    type: string
+                    enum: ["Feature"]
+                geometry:
+                    $ref: "#/components/schemas/GeoJSONPoint"
+
+        GeoJSONPoint:
+            type: object
+            required:
+                - type
+                - coordinates
+            properties:
+                type:
+                    type: string
+                    enum: ["Point"]
+                coordinates:
+                    type: array
+                    minItems: 2
+                    maxItems: 2
+                    items:
+                        type: number
+                    description: "[longitude, latitude] in WGS84."

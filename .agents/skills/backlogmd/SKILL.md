@@ -17,11 +17,11 @@ You are an agent that manages the `.backlogmd/` backlog system. You can create i
 2. **When planning**: Create items and tasks in the backlog FIRST, before any implementation. Don't just describe plans in conversation — record them. New tasks start as `open` (ready for agents) or `plan` (draft, needs human promotion). Item `status` in `index.md`: `plan` | `open` | `claimed` | `in-progress` | `done`; optional `assignee` at work level.
 3. **Wait for approval**: After planning, present the plan to the user and **STOP**. Do NOT start implementing until the user explicitly approves.
 4. **When implementing**: Follow this loop for EACH task, one at a time:
-   - **Start** the task: set `status: in-progress`, `assignee: <agent-id>` (and optionally `expiresAt`) in the task file; set the item's `index.md` to `status: claimed` or `in-progress` and `assignee: <agent-id>`. First verify every `dep` path resolves to a task file with `status: done`. Read the item's `index.md` (especially `<!-- CONTEXT -->`) and any `<tid>-<task-slug>-feedback.md` if present.
-   - **Implement** the task.
-   - **Complete** the task: **immediately** when the task's implementation is finished, update the task file (set `status: done`, clear `assignee`, check acceptance criteria). Do **not** defer marking tasks done until all tasks are finished — progress must be visible after each task. If `requiresHumanReview: false`, set `status: done` and clear `assignee` in the task file; if all tasks in the item are done, set item `status: done` and clear item `assignee`. If `requiresHumanReview: true`, set `status: review` and **stop** — only a human may move `review → done`.
-   - **Only then** move to the next task.
-   - **Writes**: Task edits → task file only. Item-level edits → `index.md` only. When blocking or releasing (stopping without completing), create/append to the task's `-feedback.md` file.
+    - **Start** the task: set `status: in-progress`, `assignee: <agent-id>` (and optionally `expiresAt`) in the task file; set the item's `index.md` to `status: claimed` or `in-progress` and `assignee: <agent-id>`. First verify every `dep` path resolves to a task file with `status: done`. Read the item's `index.md` (especially `<!-- CONTEXT -->`) and any `<tid>-<task-slug>-feedback.md` if present.
+    - **Implement** the task.
+    - **Complete** the task: **immediately** when the task's implementation is finished, update the task file (set `status: done`, clear `assignee`, check acceptance criteria). Do **not** defer marking tasks done until all tasks are finished — progress must be visible after each task. If `requiresHumanReview: false`, set `status: done` and clear `assignee` in the task file; if all tasks in the item are done, set item `status: done` and clear item `assignee`. If `requiresHumanReview: true`, set `status: review` and **stop** — only a human may move `review → done`.
+    - **Only then** move to the next task.
+    - **Writes**: Task edits → task file only. Item-level edits → `index.md` only. When blocking or releasing (stopping without completing), create/append to the task's `-feedback.md` file.
 5. **When all tasks are done**: Inform the user and ask if they want to archive the item.
 
 ---
@@ -218,10 +218,10 @@ Based on `$ARGUMENTS`, propose:
 1. **Item name** — short, descriptive title
 2. **Type** (optional) — Conventional Commits type to include in the slug (e.g. `feat`, `fix`, `refactor`, `chore`)
 3. **Tasks** — break the item into concrete implementation tasks. For each task propose:
-   - Task name (`task`)
-   - Short description (2–3 sentences)
-   - Acceptance criteria (as checkbox items)
-   - Whether human review is required (`requiresHumanReview`)
+    - Task name (`task`)
+    - Short description (2–3 sentences)
+    - Acceptance criteria (as checkbox items)
+    - Whether human review is required (`requiresHumanReview`)
 
 Present the full proposal and **ask for confirmation or edits** before writing any files.
 
