@@ -8,7 +8,7 @@ import type {
 } from "./types.js";
 import type { IGetSpatialObjectsValidator } from "./validation.js";
 
-export const GET_SPATIAL_OBJECTS_LIMIT = 1000;
+export const GET_SPATIAL_OBJECTS_LIMIT = 100000;
 
 export type IGetSpatialObjects = UseCase<
     GetSpatialObjectsInput,
