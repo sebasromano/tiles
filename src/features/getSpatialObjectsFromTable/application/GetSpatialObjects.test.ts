@@ -1,8 +1,11 @@
 import { err, ok } from "neverthrow";
 import { describe, expect, it, vi } from "vitest";
-import { GetPois, GET_POIS_LIMIT } from "./GetPois.js";
+import {
+    GetSpatialObjects,
+    GET_SPATIAL_OBJECTS_LIMIT,
+} from "./GetSpatialObjects.js";
 
-describe("GetPois", () => {
+describe("GetSpatialObjects", () => {
     it("returns validation errors without calling the repository", async () => {
         const repo = {
             getPoints: vi.fn(),
@@ -23,7 +26,7 @@ describe("GetPois", () => {
             ),
         };
 
-        const useCase = new GetPois(repo, validator);
+        const useCase = new GetSpatialObjects(repo, validator);
         const result = await useCase.execute({});
 
         expect(result.isErr()).toBe(true);
@@ -31,13 +34,16 @@ describe("GetPois", () => {
     });
 
     it("passes validated input and application policy to the repository", async () => {
-        const pois = [
+        const spatialObjects = [
             {
-                coordinates: { longitude: -73.97, latitude: 40.77 },
+                geometry: {
+                    type: "Point" as const,
+                    coordinates: [-73.97, 40.77],
+                },
             },
         ];
         const repo = {
-            getPoints: vi.fn().mockResolvedValue(ok(pois)),
+            getPoints: vi.fn().mockResolvedValue(ok(spatialObjects)),
         };
         const validator = {
             validate: vi.fn().mockReturnValue(
@@ -48,7 +54,7 @@ describe("GetPois", () => {
             ),
         };
 
-        const useCase = new GetPois(repo, validator);
+        const useCase = new GetSpatialObjects(repo, validator);
         const result = await useCase.execute({
             tableFqn: "project.dataset.table",
             geoColumn: "geometry",
@@ -57,8 +63,8 @@ describe("GetPois", () => {
         expect(repo.getPoints).toHaveBeenCalledWith({
             tableFqn: "project.dataset.table",
             geoColumn: "geometry",
-            limit: GET_POIS_LIMIT,
+            limit: GET_SPATIAL_OBJECTS_LIMIT,
         });
-        expect(result).toEqual(ok({ pois }));
+        expect(result).toEqual(ok({ spatialObjects }));
     });
 });

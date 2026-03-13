@@ -1,17 +1,17 @@
 import Fastify from "fastify";
 import {
-    GetPois,
-    GetPoisValidator,
-    type GetPointsFromTableRepository,
-    type IGetPois,
-} from "./features/getPointsFromTable/application/index.js";
-import { createBigQueryGetPointsRepository } from "./features/getPointsFromTable/infrastructure/index.js";
-import { registerGetPoisRoute } from "./features/getPointsFromTable/presentation/index.js";
+    GetSpatialObjects,
+    GetSpatialObjectsValidator,
+    type GetSpatialObjectsFromTableRepository,
+    type IGetSpatialObjects,
+} from "./features/getSpatialObjectsFromTable/application/index.js";
+import { createBigQueryGetSpatialObjectsRepository } from "./features/getSpatialObjectsFromTable/infrastructure/index.js";
+import { registerGetSpatialObjectsRoute } from "./features/getSpatialObjectsFromTable/presentation/index.js";
 
 export function buildApp(
     opts: {
-        getPois?: IGetPois;
-        getPointsRepository?: GetPointsFromTableRepository;
+        getSpatialObjects?: IGetSpatialObjects;
+        getPointsRepository?: GetSpatialObjectsFromTableRepository;
     } = {},
 ) {
     const app = Fastify({ logger: true });
@@ -20,13 +20,14 @@ export function buildApp(
         return reply.status(200).send({ status: "ok" });
     });
 
-    const getPois =
-        opts.getPois ??
-        new GetPois(
-            opts.getPointsRepository ?? createBigQueryGetPointsRepository(),
-            new GetPoisValidator(),
+    const getSpatialObjects =
+        opts.getSpatialObjects ??
+        new GetSpatialObjects(
+            opts.getPointsRepository ??
+                createBigQueryGetSpatialObjectsRepository(),
+            new GetSpatialObjectsValidator(),
         );
-    registerGetPoisRoute(app, getPois);
+    registerGetSpatialObjectsRoute(app, getSpatialObjects);
 
     return app;
 }

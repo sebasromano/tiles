@@ -4,6 +4,6 @@ export interface Validator<TParams, TValidated, TError> {
     validate(params: TParams): Result<TValidated, TError>;
 }
 
-export interface UseCase<TRequest, TOutput, TError> {
-    execute(request: TRequest): Promise<Result<TOutput, TError>>;
+export interface UseCase<TInput, TOutput, TError> {
+    execute(input: TInput): Promise<Result<TOutput, TError>>;
 }

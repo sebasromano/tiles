@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { GetPoisValidator } from "./validation.js";
+import { GetSpatialObjectsValidator } from "./validation.js";
 
-const validator = new GetPoisValidator();
+const validator = new GetSpatialObjectsValidator();
 
-describe("GetPoisValidator", () => {
+describe("GetSpatialObjectsValidator", () => {
     it("returns error when tableFqn is missing", () => {
         const result = validator.validate({});
 
