@@ -1,4 +1,6 @@
 import Fastify from "fastify";
+import cors from "@fastify/cors";
+import { previewHtml } from "./preview.js";
 import {
     GetSpatialObjects,
     GetSpatialObjectsValidator,
@@ -16,6 +18,8 @@ export function buildApp(
 ) {
     const app = Fastify({ logger: true });
 
+    app.register(cors);
+
     app.get("/health", async (_request, reply) => {
         return reply.status(200).send({ status: "ok" });
     });
@@ -29,5 +33,14 @@ export function buildApp(
         );
     registerGetSpatialObjectsRoute(app, getSpatialObjects);
 
+    app.get<{ Querystring: { url?: string } }>(
+        "/preview",
+        async (request, reply) => {
+            const url =
+                request.query.url ??
+                "https://carto.backlogmd.com/spatial-objects?tableFqn=carto-demo-data.demo_tables.usa_census_tracts";
+            return reply.type("text/html").send(previewHtml(url));
+        },
+    );
     return app;
 }
