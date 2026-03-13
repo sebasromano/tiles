@@ -2,14 +2,14 @@ openapi: 3.0.3
 info:
     title: Tiles API
     description: MVP of the Tiles API
-    version: 1.0.0
+    version: 2.0.0
 
 paths:
-    /pois:
+    /spatial-objects:
         get:
-            summary: Get points of interest
-            description: Returns points from a BigQuery table as a GeoJSON FeatureCollection. Only the geometry column is queried; each feature has a Point geometry with coordinates [longitude, latitude] and no properties.
-            operationId: getPois
+            summary: Get spatial objects
+            description: Returns geometries from a BigQuery table as a GeoJSON FeatureCollection. Only the geometry column is queried; each feature contains the parsed geometry (any supported type).
+            operationId: getSpatialObjects
             parameters:
                 - name: tableFqn
                   in: query
@@ -17,7 +17,7 @@ paths:
                   description: Fully qualified name of the BigQuery table (e.g. project.dataset.table).
                   schema:
                       type: string
-                      example: "my-project.my_dataset.my_poi_table"
+                      example: "my-project.my_dataset.my_geo_table"
                 - name: geoColumn
                   in: query
                   required: false
@@ -27,11 +27,11 @@ paths:
                       default: "geom"
             responses:
                 "200":
-                    description: GeoJSON FeatureCollection of points.
+                    description: GeoJSON FeatureCollection of spatial objects.
                     content:
                         application/json:
                             schema:
-                                $ref: "#/components/schemas/GeoJSONFeatureCollectionPoint"
+                                $ref: "#/components/schemas/GeoJSONFeatureCollection"
                             example:
                                 type: "FeatureCollection"
                                 features:
@@ -41,11 +41,25 @@ paths:
                                           coordinates: [100.0, 0.0]
                                     - type: "Feature"
                                       geometry:
-                                          type: "Point"
+                                          type: "LineString"
                                           coordinates:
                                               [
-                                                  -2.60314290410708,
-                                                  51.4411264220088,
+                                                  [0, 0],
+                                                  [1, 1],
+                                                  [2, 2],
+                                              ]
+                                    - type: "Feature"
+                                      geometry:
+                                          type: "Polygon"
+                                          coordinates:
+                                              [
+                                                  [
+                                                      [0, 0],
+                                                      [1, 0],
+                                                      [1, 1],
+                                                      [0, 1],
+                                                      [0, 0],
+                                                  ],
                                               ]
                 "400":
                     description: Bad request (validation errors for query parameters).
@@ -70,6 +84,7 @@ components:
                 message:
                     type: string
                     description: Human-readable error message.
+
         ValidationErrorResponse:
             type: object
             required:
@@ -86,7 +101,8 @@ components:
                         tableFqn:
                             - code: "required"
                               message: "tableFqn is required"
-        GeoJSONFeatureCollectionPoint:
+
+        GeoJSONFeatureCollection:
             type: object
             required:
                 - type
@@ -98,9 +114,9 @@ components:
                 features:
                     type: array
                     items:
-                        $ref: "#/components/schemas/GeoJSONFeaturePoint"
+                        $ref: "#/components/schemas/GeoJSONFeature"
 
-        GeoJSONFeaturePoint:
+        GeoJSONFeature:
             type: object
             required:
                 - type
@@ -110,7 +126,19 @@ components:
                     type: string
                     enum: ["Feature"]
                 geometry:
-                    $ref: "#/components/schemas/GeoJSONPoint"
+                    $ref: "#/components/schemas/GeoJSONGeometry"
+
+        GeoJSONGeometry:
+            oneOf:
+                - $ref: "#/components/schemas/GeoJSONPoint"
+                - $ref: "#/components/schemas/GeoJSONLineString"
+                - $ref: "#/components/schemas/GeoJSONPolygon"
+                - $ref: "#/components/schemas/GeoJSONMultiPoint"
+                - $ref: "#/components/schemas/GeoJSONMultiLineString"
+                - $ref: "#/components/schemas/GeoJSONMultiPolygon"
+                - $ref: "#/components/schemas/GeoJSONGeometryCollection"
+            discriminator:
+                propertyName: type
 
         GeoJSONPoint:
             type: object
@@ -128,3 +156,121 @@ components:
                     items:
                         type: number
                     description: "[longitude, latitude] in WGS84."
+
+        GeoJSONLineString:
+            type: object
+            required:
+                - type
+                - coordinates
+            properties:
+                type:
+                    type: string
+                    enum: ["LineString"]
+                coordinates:
+                    type: array
+                    items:
+                        type: array
+                        minItems: 2
+                        maxItems: 2
+                        items:
+                            type: number
+                    description: Array of [longitude, latitude] positions.
+
+        GeoJSONPolygon:
+            type: object
+            required:
+                - type
+                - coordinates
+            properties:
+                type:
+                    type: string
+                    enum: ["Polygon"]
+                coordinates:
+                    type: array
+                    items:
+                        type: array
+                        items:
+                            type: array
+                            minItems: 2
+                            maxItems: 2
+                            items:
+                                type: number
+                    description: Array of linear rings (first is exterior, rest are holes).
+
+        GeoJSONMultiPoint:
+            type: object
+            required:
+                - type
+                - coordinates
+            properties:
+                type:
+                    type: string
+                    enum: ["MultiPoint"]
+                coordinates:
+                    type: array
+                    items:
+                        type: array
+                        minItems: 2
+                        maxItems: 2
+                        items:
+                            type: number
+                    description: Array of [longitude, latitude] positions.
+
+        GeoJSONMultiLineString:
+            type: object
+            required:
+                - type
+                - coordinates
+            properties:
+                type:
+                    type: string
+                    enum: ["MultiLineString"]
+                coordinates:
+                    type: array
+                    items:
+                        type: array
+                        items:
+                            type: array
+                            minItems: 2
+                            maxItems: 2
+                            items:
+                                type: number
+                    description: Array of line strings.
+
+        GeoJSONMultiPolygon:
+            type: object
+            required:
+                - type
+                - coordinates
+            properties:
+                type:
+                    type: string
+                    enum: ["MultiPolygon"]
+                coordinates:
+                    type: array
+                    items:
+                        type: array
+                        items:
+                            type: array
+                            items:
+                                type: array
+                                minItems: 2
+                                maxItems: 2
+                                items:
+                                    type: number
+                    description: Array of polygons.
+
+        GeoJSONGeometryCollection:
+            type: object
+            required:
+                - type
+                - geometries
+            properties:
+                type:
+                    type: string
+                    enum: ["GeometryCollection"]
+                geometries:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/GeoJSONGeometry"
+                    description: Array of geometry objects.

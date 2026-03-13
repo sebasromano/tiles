@@ -1,29 +1,26 @@
-/**
- * Validation for getPointsFromTable use case.
- * Exposes a GetPoisValidator class for injection into GetPois and separate testing.
- */
-
 import { err, ok, type Result } from "neverthrow";
 import type { Validator } from "../../../shared/index.js";
 import type {
-    GetPoisCommand,
-    GetPoisError,
-    GetPoisQuery,
+    GetSpatialObjectsCommand,
+    GetSpatialObjectsError,
+    GetSpatialObjectsInput,
     ValidationErrors,
 } from "./types.js";
 
 const DEFAULT_GEO_COLUMN = "geom";
 
-/** Port: validator for GetPois params (shared Validator contract). */
-export type IGetPoisValidator = Validator<
-    GetPoisQuery,
-    GetPoisCommand,
-    GetPoisError
+export type IGetSpatialObjectsValidator = Validator<
+    GetSpatialObjectsInput,
+    GetSpatialObjectsCommand,
+    GetSpatialObjectsError
 >;
 
-/** Validates GetPoisParams and returns merged field errors or validated params. */
-export class GetPoisValidator implements IGetPoisValidator {
-    validate(params: GetPoisQuery): Result<GetPoisCommand, GetPoisError> {
+export class GetSpatialObjectsValidator
+    implements IGetSpatialObjectsValidator
+{
+    validate(
+        params: GetSpatialObjectsInput,
+    ): Result<GetSpatialObjectsCommand, GetSpatialObjectsError> {
         const errors: ValidationErrors = {};
         let tableFqn: string | null = null;
         let geoColumn: string | null = null;
@@ -55,13 +52,11 @@ export class GetPoisValidator implements IGetPoisValidator {
     }
 }
 
-/** BigQuery-safe FQN: at least two segments (e.g. dataset.table), each part alphanumeric, underscore, or hyphen. */
 const SAFE_TABLE_FQN = /^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/;
 
-/** Validate tableFqn: required, non-empty, BigQuery-safe identifier (e.g. project.dataset.table). */
 export function validateTableFqn(
     tableFqn: string | undefined,
-): Result<string, GetPoisError> {
+): Result<string, GetSpatialObjectsError> {
     const trimmed = typeof tableFqn === "string" ? tableFqn.trim() : "";
     if (!trimmed) {
         return err({
@@ -90,13 +85,11 @@ export function validateTableFqn(
     return ok(trimmed);
 }
 
-/** BigQuery-safe column name: alphanumeric, underscore, hyphen. */
 const SAFE_GEO_COLUMN = /^[a-zA-Z0-9_-]+$/;
 
-/** Validate geoColumn: optional, default "geom"; if provided must be non-empty and BigQuery-safe. */
 export function validateGeoColumn(
     geoColumn: string | undefined,
-): Result<string, GetPoisError> {
+): Result<string, GetSpatialObjectsError> {
     if (geoColumn !== undefined && typeof geoColumn === "string") {
         const trimmed = geoColumn.trim();
         if (!trimmed) {

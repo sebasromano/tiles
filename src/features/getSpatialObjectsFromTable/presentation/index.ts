@@ -1,21 +1,17 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import type {
-    GetPoisError,
-    GetPoisQuery,
-    GetPoisResult,
-    IGetPois,
+    GetSpatialObjectsError,
+    GetSpatialObjectsInput,
+    GetSpatialObjectsResult,
+    IGetSpatialObjects,
 } from "../application/index.js";
+import type { Geometry } from "../domain/index.js";
 
-type Querystring = GetPoisQuery;
-
-interface GeoJsonPoint {
-    type: "Point";
-    coordinates: [number, number];
-}
+type Querystring = GetSpatialObjectsInput;
 
 interface GeoJsonFeature {
     type: "Feature";
-    geometry: GeoJsonPoint;
+    geometry: Geometry;
 }
 
 interface GeoJsonFeatureCollection {
@@ -23,17 +19,17 @@ interface GeoJsonFeatureCollection {
     features: GeoJsonFeature[];
 }
 
-export function registerGetPoisRoute(
+export function registerGetSpatialObjectsRoute(
     app: FastifyInstance,
-    getPois: IGetPois,
+    getSpatialObjects: IGetSpatialObjects,
 ): void {
     app.get<{ Querystring: Querystring }>(
-        "/pois",
+        "/spatial-objects",
         async (
             request: FastifyRequest<{ Querystring: Querystring }>,
             reply,
         ) => {
-            const result = await getPois.execute(request.query);
+            const result = await getSpatialObjects.execute(request.query);
 
             if (result.isErr()) {
                 return mapErrorToReply(reply, result.error);
@@ -44,7 +40,7 @@ export function registerGetPoisRoute(
     );
 }
 
-function mapErrorToReply(reply: FastifyReplyLike, error: GetPoisError) {
+function mapErrorToReply(reply: FastifyReplyLike, error: GetSpatialObjectsError) {
     if (error.kind === "ValidationError") {
         return reply.status(400).send({ errors: error.errors });
     }
@@ -52,18 +48,14 @@ function mapErrorToReply(reply: FastifyReplyLike, error: GetPoisError) {
     return reply.status(500).send({ error: error.message });
 }
 
-function toFeatureCollection(result: GetPoisResult): GeoJsonFeatureCollection {
+function toFeatureCollection(
+    result: GetSpatialObjectsResult,
+): GeoJsonFeatureCollection {
     return {
         type: "FeatureCollection",
-        features: result.pois.map((poi) => ({
+        features: result.spatialObjects.map((obj) => ({
             type: "Feature",
-            geometry: {
-                type: "Point",
-                coordinates: [
-                    poi.coordinates.longitude,
-                    poi.coordinates.latitude,
-                ],
-            },
+            geometry: obj.geometry,
         })),
     };
 }
