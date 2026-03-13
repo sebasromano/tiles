@@ -70,6 +70,70 @@ paths:
                 "500":
                     description: Server error (e.g. BigQuery or table access failure).
 
+    /tilesets/{tilesetFQN}/tiles/{z}/{x}/{y}:
+        get:
+            summary: Get a tile from a tileset
+            description: >
+                Returns a single vector tile (MVT) from a BigQuery tileset table.
+                The tileset table is expected to have columns `z`, `x`, `y`, and `data`,
+                where `data` contains the tile in MVT format, gzipped and base64-encoded.
+                The endpoint decodes and decompresses the tile before returning raw MVT binary.
+            operationId: getTile
+            parameters:
+                - name: tilesetFQN
+                  in: path
+                  required: true
+                  description: Fully qualified name of the BigQuery tileset table (e.g. project.dataset.tileset).
+                  schema:
+                      type: string
+                      example: "my-project.my_dataset.my_tileset"
+                - name: z
+                  in: path
+                  required: true
+                  description: Zoom level of the tile.
+                  schema:
+                      type: integer
+                      minimum: 0
+                      example: 14
+                - name: x
+                  in: path
+                  required: true
+                  description: X coordinate (column) of the tile.
+                  schema:
+                      type: integer
+                      minimum: 0
+                      example: 4602
+                - name: y
+                  in: path
+                  required: true
+                  description: Y coordinate (row) of the tile.
+                  schema:
+                      type: integer
+                      minimum: 0
+                      example: 9819
+            responses:
+                "200":
+                    description: The vector tile in MVT format.
+                    content:
+                        application/vnd.mapbox-vector-tile:
+                            schema:
+                                type: string
+                                format: binary
+                "400":
+                    description: Bad request (validation errors for path parameters).
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ValidationErrorResponse"
+                "404":
+                    description: Tile not found at the specified z/x/y coordinates.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/NotFoundErrorResponse"
+                "500":
+                    description: Server error (e.g. BigQuery or table access failure).
+
 components:
     schemas:
         ValidationFieldError:
@@ -101,6 +165,16 @@ components:
                         tableFqn:
                             - code: "required"
                               message: "tableFqn is required"
+
+        NotFoundErrorResponse:
+            type: object
+            required:
+                - error
+            properties:
+                error:
+                    type: string
+                    description: Human-readable error message.
+                    example: "Tile not found at z=14, x=4602, y=9819"
 
         GeoJSONFeatureCollection:
             type: object
