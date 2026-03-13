@@ -38,7 +38,7 @@ export function buildApp(
         async (request, reply) => {
             const url =
                 request.query.url ??
-                "https://carto.backlogmd.com/spatial-objects?tableFqn=carto-demo-data.demo_tables.usa_census_tracts";
+                "https://carto.backlogmd.com/spatial-objects?tableFqn=carto-demo-data.demo_tables.spain_earthquakes";
             return reply.type("text/html").send(previewHtml(url));
         },
     );

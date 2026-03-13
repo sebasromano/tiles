@@ -2,7 +2,7 @@ export function previewHtml(dataUrl: string): string {
     return `<!DOCTYPE html>
 <html>
   <head>
-    <title>deck.gl GeoJsonLayer (Polygon) Example</title>
+    <title>deck.gl GeoJsonLayer Preview</title>
 
     <script src="https://unpkg.com/deck.gl@^9.0.0/dist.min.js"></script>
     <script src='https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.js'></script>
@@ -32,67 +32,70 @@ export function previewHtml(dataUrl: string): string {
 
     const {DeckGL, GeoJsonLayer} = deck;
 
-    const COLOR_SCALE = [
-      // negative
-      [65, 182, 196],
-      [127, 205, 187],
-      [199, 233, 180],
-      [237, 248, 177],
-
-      // positive
-      [255, 255, 204],
-      [255, 237, 160],
-      [254, 217, 118],
-      [254, 178, 76],
-      [253, 141, 60],
-      [252, 78, 42],
-      [227, 26, 28],
-      [189, 0, 38],
-      [128, 0, 38]
-    ];
-
     const geojsonLayer = new GeoJsonLayer({
       data: '${dataUrl}',
       opacity: 0.8,
-      stroked: false,
+      stroked: true,
       filled: true,
-      extruded: true,
-      wireframe: true,
-
-      getElevation: f => Math.sqrt(f.properties.valuePerSqm) * 10,
-      getFillColor: f => colorScale(f.properties.growth),
+      extruded: false,
+      pointType: 'circle',
+      getPointRadius: 100,
+      pointRadiusMinPixels: 3,
+      pointRadiusMaxPixels: 20,
+      getFillColor: [65, 182, 196, 180],
       getLineColor: [255, 255, 255],
-
+      lineWidthMinPixels: 1,
       pickable: true
     });
 
-    new DeckGL({
-      mapStyle: 'https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json',
-      initialViewState: {
-        latitude: 49.254,
-        longitude: -123.13,
-        zoom: 11,
-        maxZoom: 16,
-        pitch: 45
-      },
-      controller: true,
-      layers: [geojsonLayer],
-      getTooltip
-    });
+    fetch('${dataUrl}')
+      .then(r => r.json())
+      .then(data => {
+        const [minLng, minLat, maxLng, maxLat] = getBounds(data);
+        const lngSpan = maxLng - minLng;
+        const latSpan = maxLat - minLat;
+        const maxSpan = Math.max(lngSpan, latSpan);
+        const zoom = maxSpan > 0 ? Math.floor(-Math.log2(maxSpan / 360)) : 12;
 
-    function colorScale(x) {
-      const i = Math.round(x * 7) + 4;
-      if (x < 0) {
-        return COLOR_SCALE[i] || COLOR_SCALE[0];
+        new DeckGL({
+          mapStyle: 'https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json',
+          initialViewState: {
+            latitude: (minLat + maxLat) / 2,
+            longitude: (minLng + maxLng) / 2,
+            zoom: Math.min(Math.max(zoom, 1), 16),
+            maxZoom: 20,
+            pitch: 45
+          },
+          controller: true,
+          layers: [geojsonLayer],
+          getTooltip
+        });
+      });
+
+    function getBounds(geojson) {
+      let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+      function visit(coords) {
+        if (typeof coords[0] === 'number') {
+          minLng = Math.min(minLng, coords[0]);
+          minLat = Math.min(minLat, coords[1]);
+          maxLng = Math.max(maxLng, coords[0]);
+          maxLat = Math.max(maxLat, coords[1]);
+        } else {
+          coords.forEach(visit);
+        }
       }
-      return COLOR_SCALE[i] || COLOR_SCALE[COLOR_SCALE.length - 1];
+      const features = geojson.features || [geojson];
+      features.forEach(f => visit((f.geometry || f).coordinates));
+      return [minLng, minLat, maxLng, maxLat];
     }
 
     function getTooltip({object}) {
-      return object && \`Average Property Value
-        \${object.properties.valuePerSqm}
-        Growth
-        \${Math.round(object.properties.growth * 100)}\`;
+      if (!object || !object.properties) return null;
+      const props = object.properties;
+      const lines = Object.entries(props)
+        .filter(([, v]) => v != null)
+        .map(([k, v]) => k + ': ' + v);
+      return lines.length ? lines.join('\\n') : null;
     }
 
   </script>
