@@ -1,3 +1,75 @@
+export function tilePreviewHtml(tilesUrl: string): string {
+    return `<!DOCTYPE html>
+<html>
+  <head>
+    <title>deck.gl MVTLayer Preview</title>
+
+    <script src="https://unpkg.com/deck.gl@^9.0.0/dist.min.js"></script>
+    <script src='https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.js'></script>
+
+    <link href='https://unpkg.com/maplibre-gl@3.6.0/dist/maplibre-gl.css' rel='stylesheet' />
+    <style type="text/css">
+      body {
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+        overflow: hidden;
+      }
+      .deck-tooltip {
+        font-family: Helvetica, Arial, sans-serif;
+        padding: 6px !important;
+        margin: 8px;
+        max-width: 300px;
+        font-size: 10px;
+      }
+    </style>
+  </head>
+
+  <body>
+  </body>
+
+  <script type="text/javascript">
+
+    const {DeckGL, MVTLayer} = deck;
+
+    const mvtLayer = new MVTLayer({
+      data: ['${tilesUrl}'],
+      minZoom: 0,
+      maxZoom: 23,
+      getFillColor: [65, 182, 196, 180],
+      getLineColor: [255, 255, 255],
+      lineWidthMinPixels: 1,
+      pointRadiusMinPixels: 2.5,
+      pickable: true
+    });
+
+    new DeckGL({
+      mapStyle: 'https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json',
+      initialViewState: {
+        latitude: 34.10,
+        longitude: -100.21,
+        zoom: 3,
+        maxZoom: 20,
+        pitch: 45
+      },
+      controller: true,
+      layers: [mvtLayer],
+      getTooltip
+    });
+
+    function getTooltip({object}) {
+      if (!object || !object.properties) return null;
+      const props = object.properties;
+      const lines = Object.entries(props)
+        .filter(([, v]) => v != null)
+        .map(([k, v]) => k + ': ' + v);
+      return lines.length ? lines.join('\\n') : null;
+    }
+
+  </script>
+</html>`;
+}
+
 export function previewHtml(dataUrl: string): string {
     return `<!DOCTYPE html>
 <html>
