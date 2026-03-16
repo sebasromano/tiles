@@ -6,6 +6,7 @@ import {
 } from "./validation.js";
 
 export type {
+    CursorPayload,
     GetSpatialObjectsCommand,
     GetSpatialObjectsError,
     GetSpatialObjectsInput,
@@ -17,16 +18,21 @@ export type {
     GetSpatialObjectsFromTableRepository,
     GetSpatialObjectsFromTableRepositoryError,
     GetSpatialObjectsRequest,
+    GetSpatialObjectsRepositoryResult,
 } from "./ports.js";
 export {
     GetSpatialObjects,
-    GET_SPATIAL_OBJECTS_LIMIT,
     type IGetSpatialObjects,
 } from "./GetSpatialObjects.js";
 export {
     GetSpatialObjectsValidator,
     validateTableFqn,
     validateGeoColumn,
+    validatePageSize,
+    decodeCursor,
+    encodeCursor,
+    DEFAULT_PAGE_SIZE,
+    MAX_PAGE_SIZE,
 } from "./validation.js";
 
 export function createGetSpatialObjects(

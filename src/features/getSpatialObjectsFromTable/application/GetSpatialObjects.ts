@@ -8,8 +8,6 @@ import type {
 } from "./types.js";
 import type { IGetSpatialObjectsValidator } from "./validation.js";
 
-export const GET_SPATIAL_OBJECTS_LIMIT = 100000;
-
 export type IGetSpatialObjects = UseCase<
     GetSpatialObjectsInput,
     GetSpatialObjectsResult,
@@ -28,13 +26,9 @@ export class GetSpatialObjects implements IGetSpatialObjects {
         const validated = this.validator.validate(input);
         if (validated.isErr()) return err(validated.error);
 
-        const result = await this.repo.getPoints({
-            tableFqn: validated.value.tableFqn,
-            geoColumn: validated.value.geoColumn,
-            limit: GET_SPATIAL_OBJECTS_LIMIT,
-        });
+        const result = await this.repo.getPoints(validated.value);
         if (result.isErr()) return err(result.error);
 
-        return ok({ spatialObjects: result.value });
+        return ok(result.value);
     }
 }

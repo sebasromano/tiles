@@ -1,10 +1,12 @@
 import type { Result } from "neverthrow";
 import type { SpatialObject } from "../domain/index.js";
+import type { GetSpatialObjectsCommand } from "./types.js";
 
-export interface GetSpatialObjectsRequest {
-    tableFqn: string;
-    geoColumn: string;
-    limit: number;
+export type GetSpatialObjectsRequest = GetSpatialObjectsCommand;
+
+export interface GetSpatialObjectsRepositoryResult {
+    spatialObjects: SpatialObject[];
+    nextCursor: string | null;
 }
 
 export interface GetSpatialObjectsFromTableRepositoryError {
@@ -17,7 +19,7 @@ export interface GetSpatialObjectsFromTableRepository {
         request: GetSpatialObjectsRequest,
     ): Promise<
         Result<
-            SpatialObject[],
+            GetSpatialObjectsRepositoryResult,
             GetSpatialObjectsFromTableRepositoryError
         >
     >;

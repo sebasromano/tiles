@@ -8,30 +8,51 @@ paths:
     /spatial-objects:
         get:
             summary: Get spatial objects
-            description: Returns geometries from a BigQuery table as a GeoJSON FeatureCollection. Only the geometry column is queried; each feature contains the parsed geometry (any supported type).
+            description: |
+                Returns geometries from a BigQuery table as a paginated GeoJSON FeatureCollection.
+                The first request starts a BigQuery query job; subsequent requests page through
+                the job's result set using an opaque cursor.
+
+                Initial request: provide `tableFqn` (required), plus optional `geoColumn` and `pageSize`.
+                Follow-up request: provide only `cursor` (the opaque string from the previous response's `nextCursor`).
             operationId: getSpatialObjects
             parameters:
                 - name: tableFqn
                   in: query
-                  required: true
-                  description: Fully qualified name of the BigQuery table (e.g. project.dataset.table).
+                  required: false
+                  description: Fully qualified name of the BigQuery table. Required on the initial request; omit when using a cursor.
                   schema:
                       type: string
                       example: "my-project.my_dataset.my_geo_table"
                 - name: geoColumn
                   in: query
                   required: false
-                  description: Name of the geometry column in the table. Defaults to "geom".
+                  description: Name of the geometry column in the table. Defaults to "geom". Only used on the initial request.
                   schema:
                       type: string
                       default: "geom"
+                - name: pageSize
+                  in: query
+                  required: false
+                  description: Maximum number of rows per page (1–100000). Defaults to 10000. Only used on the initial request.
+                  schema:
+                      type: integer
+                      minimum: 1
+                      maximum: 100000
+                      default: 10000
+                - name: cursor
+                  in: query
+                  required: false
+                  description: Opaque pagination cursor from a previous response's `nextCursor`. When provided, other query parameters are ignored.
+                  schema:
+                      type: string
             responses:
                 "200":
-                    description: GeoJSON FeatureCollection of spatial objects.
+                    description: GeoJSON FeatureCollection extended with a `nextCursor` field for pagination.
                     content:
                         application/json:
                             schema:
-                                $ref: "#/components/schemas/GeoJSONFeatureCollection"
+                                $ref: "#/components/schemas/PaginatedFeatureCollection"
                             example:
                                 type: "FeatureCollection"
                                 features:
@@ -39,28 +60,7 @@ paths:
                                       geometry:
                                           type: "Point"
                                           coordinates: [100.0, 0.0]
-                                    - type: "Feature"
-                                      geometry:
-                                          type: "LineString"
-                                          coordinates:
-                                              [
-                                                  [0, 0],
-                                                  [1, 1],
-                                                  [2, 2],
-                                              ]
-                                    - type: "Feature"
-                                      geometry:
-                                          type: "Polygon"
-                                          coordinates:
-                                              [
-                                                  [
-                                                      [0, 0],
-                                                      [1, 0],
-                                                      [1, 1],
-                                                      [0, 1],
-                                                      [0, 0],
-                                                  ],
-                                              ]
+                                nextCursor: "eyJqb2JJZCI6ImJxdXhqb2JfMTIzIiwicGFnZVRva2VuIjoibmV4dC1wYWdlLXRva2VuIiwibG9jYXRpb24iOiJ1cy1jZW50cmFsMSIsInByb2plY3RJZCI6Im15LXByb2plY3QiLCJwYWdlU2l6ZSI6NTAwMH0"
                 "400":
                     description: Bad request (validation errors for query parameters).
                     content:
@@ -175,6 +175,18 @@ components:
                     type: string
                     description: Human-readable error message.
                     example: "Tile not found at z=14, x=4602, y=9819"
+
+        PaginatedFeatureCollection:
+            allOf:
+                - $ref: "#/components/schemas/GeoJSONFeatureCollection"
+                - type: object
+                  required:
+                      - nextCursor
+                  properties:
+                      nextCursor:
+                          type: string
+                          nullable: true
+                          description: Opaque cursor for the next page, or null if this is the last page.
 
         GeoJSONFeatureCollection:
             type: object
