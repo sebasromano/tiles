@@ -14,9 +14,10 @@ interface GeoJsonFeature {
     geometry: Geometry;
 }
 
-interface GeoJsonFeatureCollection {
+interface PaginatedFeatureCollection {
     type: "FeatureCollection";
     features: GeoJsonFeature[];
+    nextCursor: string | null;
 }
 
 export function registerGetSpatialObjectsRoute(
@@ -35,12 +36,17 @@ export function registerGetSpatialObjectsRoute(
                 return mapErrorToReply(reply, result.error);
             }
 
-            return reply.status(200).send(toFeatureCollection(result.value));
+            return reply
+                .status(200)
+                .send(toPaginatedResponse(result.value));
         },
     );
 }
 
-function mapErrorToReply(reply: FastifyReplyLike, error: GetSpatialObjectsError) {
+function mapErrorToReply(
+    reply: FastifyReplyLike,
+    error: GetSpatialObjectsError,
+) {
     if (error.kind === "ValidationError") {
         return reply.status(400).send({ errors: error.errors });
     }
@@ -48,15 +54,16 @@ function mapErrorToReply(reply: FastifyReplyLike, error: GetSpatialObjectsError)
     return reply.status(500).send({ error: error.message });
 }
 
-function toFeatureCollection(
+function toPaginatedResponse(
     result: GetSpatialObjectsResult,
-): GeoJsonFeatureCollection {
+): PaginatedFeatureCollection {
     return {
         type: "FeatureCollection",
         features: result.spatialObjects.map((obj) => ({
             type: "Feature",
             geometry: obj.geometry,
         })),
+        nextCursor: result.nextCursor,
     };
 }
 

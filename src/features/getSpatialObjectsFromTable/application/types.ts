@@ -15,13 +15,31 @@ export type GetSpatialObjectsError =
 export interface GetSpatialObjectsInput {
     tableFqn?: string;
     geoColumn?: string;
+    cursor?: string;
+    pageSize?: string;
 }
 
-export interface GetSpatialObjectsCommand {
-    tableFqn: string;
-    geoColumn: string;
+export interface CursorPayload {
+    jobId: string;
+    pageToken: string;
+    location: string;
+    projectId: string;
+    pageSize: number;
 }
+
+export type GetSpatialObjectsCommand =
+    | {
+          kind: "initial";
+          tableFqn: string;
+          geoColumn: string;
+          pageSize: number;
+      }
+    | {
+          kind: "cursor";
+          cursor: CursorPayload;
+      };
 
 export interface GetSpatialObjectsResult {
     spatialObjects: SpatialObject[];
+    nextCursor: string | null;
 }
