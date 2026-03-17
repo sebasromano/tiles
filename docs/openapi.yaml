@@ -8,7 +8,13 @@ paths:
     /spatial-objects:
         get:
             summary: Get spatial objects
-            description: Returns geometries from a BigQuery table as a GeoJSON FeatureCollection. Only the geometry column is queried; each feature contains the parsed geometry (any supported type).
+            description: |
+                Returns geometries from a BigQuery table as a GeoJSON FeatureCollection.
+                Each feature contains the parsed geometry (any supported type).
+
+                Viewport-based request: when you provide bounding box parameters (minLng, minLat, maxLng, maxLat),
+                all features inside that viewport are returned (limit is not applied). When the user pans or zooms the map,
+                send new bounds to get a new response (one request per viewport; no cursor). The `limit` parameter applies only when not using viewport (legacy path).
             operationId: getSpatialObjects
             parameters:
                 - name: tableFqn
@@ -25,6 +31,57 @@ paths:
                   schema:
                       type: string
                       default: "geom"
+                - name: minLng
+                  in: query
+                  required: false
+                  description: Minimum longitude (WGS84) of the viewport bounding box. When provided, all of minLng, minLat, maxLng, maxLat must be provided.
+                  schema:
+                      type: number
+                      format: double
+                - name: minLat
+                  in: query
+                  required: false
+                  description: Minimum latitude (WGS84) of the viewport bounding box.
+                  schema:
+                      type: number
+                      format: double
+                - name: maxLng
+                  in: query
+                  required: false
+                  description: Maximum longitude (WGS84) of the viewport bounding box.
+                  schema:
+                      type: number
+                      format: double
+                - name: maxLat
+                  in: query
+                  required: false
+                  description: Maximum latitude (WGS84) of the viewport bounding box.
+                  schema:
+                      type: number
+                      format: double
+                - name: limit
+                  in: query
+                  required: false
+                  description: Maximum number of features to return. Only applied when not using viewport (no bounds). When using viewport, all features inside the bounds are returned and limit is ignored. When not using viewport, default 100000.
+                  schema:
+                      type: integer
+                      minimum: 1
+                      maximum: 50000
+                      default: 1000
+                - name: latColumn
+                  in: query
+                  required: false
+                  description: Name of the latitude column for stable ordering when using viewport. Defaults to "lat". Used when the table has explicit lat/lng columns.
+                  schema:
+                      type: string
+                      default: "lat"
+                - name: lngColumn
+                  in: query
+                  required: false
+                  description: Name of the longitude column for stable ordering when using viewport. Defaults to "lng".
+                  schema:
+                      type: string
+                      default: "lng"
             responses:
                 "200":
                     description: GeoJSON FeatureCollection of spatial objects.

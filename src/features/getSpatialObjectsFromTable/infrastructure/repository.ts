@@ -18,11 +18,30 @@ export class BigQueryGetSpatialObjectsRepository
     ): Promise<
         Result<SpatialObject[], GetSpatialObjectsFromTableRepositoryError>
     > {
-        const query = `SELECT \`${request.geoColumn}\` FROM \`${request.tableFqn}\` LIMIT ?`;
+        const geoCol = request.geoColumn;
+        const table = request.tableFqn;
+
+        let query: string;
+        let params: Record<string, unknown>;
+
+        if (request.bounds) {
+            const { minLng, minLat, maxLng, maxLat } = request.bounds;
+            query = `SELECT \`${geoCol}\` FROM \`${table}\` WHERE ST_IntersectsBox(\`${geoCol}\`, @minLng, @minLat, @maxLng, @maxLat) ORDER BY ST_X(ST_Centroid(\`${geoCol}\`)), ST_Y(ST_Centroid(\`${geoCol}\`))`;
+            params = {
+                minLng,
+                minLat,
+                maxLng,
+                maxLat,
+            };
+        } else {
+            query = `SELECT \`${geoCol}\` FROM \`${table}\` LIMIT @limit`;
+            params = { limit: request.limit };
+        }
+
         const resultAsync = ResultAsync.fromPromise(
             this.bigquery.query({
                 query,
-                params: [request.limit],
+                params,
             }),
             (e: unknown): GetSpatialObjectsFromTableRepositoryError => ({
                 kind: "RepositoryError",

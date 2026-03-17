@@ -6,6 +6,7 @@ import {
 } from "./validation.js";
 
 export type {
+    Bounds,
     GetSpatialObjectsCommand,
     GetSpatialObjectsError,
     GetSpatialObjectsInput,
@@ -27,6 +28,11 @@ export {
     GetSpatialObjectsValidator,
     validateTableFqn,
     validateGeoColumn,
+    validateBounds,
+    validateLimit,
+    VIEWPORT_DEFAULT_LIMIT,
+    VIEWPORT_MAX_LIMIT,
+    LEGACY_MAX_LIMIT,
 } from "./validation.js";
 
 export function createGetSpatialObjects(

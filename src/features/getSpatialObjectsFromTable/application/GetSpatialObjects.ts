@@ -31,7 +31,10 @@ export class GetSpatialObjects implements IGetSpatialObjects {
         const result = await this.repo.getPoints({
             tableFqn: validated.value.tableFqn,
             geoColumn: validated.value.geoColumn,
-            limit: GET_SPATIAL_OBJECTS_LIMIT,
+            bounds: validated.value.bounds,
+            limit: validated.value.limit,
+            latColumn: validated.value.latColumn,
+            lngColumn: validated.value.lngColumn,
         });
         if (result.isErr()) return err(result.error);
 
