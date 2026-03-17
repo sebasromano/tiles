@@ -137,6 +137,45 @@ describe("GET /spatial-objects", () => {
         expect(body.type).toBe("FeatureCollection");
         expect(body.features).toBeDefined();
     });
+
+    it("returns 200 with valid viewport bounds and GeoJSON FeatureCollection", async () => {
+        const appWithMock = buildApp({ getPointsRepository: populatedRepo });
+        const res = await appWithMock.inject({
+            method: "GET",
+            url: "/spatial-objects?tableFqn=project.dataset.table&minLng=-74&minLat=40&maxLng=-73&maxLat=41",
+        });
+
+        expect(res.statusCode).toBe(200);
+        expect(res.headers["content-type"]).toMatch(/application\/json/);
+        const body = res.json();
+        expect(body.type).toBe("FeatureCollection");
+        expect(Array.isArray(body.features)).toBe(true);
+    });
+
+    it("returns 400 when viewport bounds are incomplete (e.g. missing maxLat)", async () => {
+        const app = buildApp();
+        const res = await app.inject({
+            method: "GET",
+            url: "/spatial-objects?tableFqn=project.dataset.table&minLng=-74&minLat=40&maxLng=-73",
+        });
+
+        expect(res.statusCode).toBe(400);
+        const body = res.json();
+        expect(body.errors).toBeDefined();
+        expect(body.errors.maxLat).toBeDefined();
+    });
+
+    it("returns 400 when minLng >= maxLng", async () => {
+        const app = buildApp();
+        const res = await app.inject({
+            method: "GET",
+            url: "/spatial-objects?tableFqn=project.dataset.table&minLng=-73&minLat=40&maxLng=-74&maxLat=41",
+        });
+
+        expect(res.statusCode).toBe(400);
+        const body = res.json();
+        expect(body.errors).toBeDefined();
+    });
 });
 
 describe("GET /pois (old endpoint)", () => {

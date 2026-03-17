@@ -118,4 +118,143 @@ describe("GetSpatialObjectsValidator", () => {
             expect(result.value.geoColumn).toBe("geom_col");
         }
     });
+
+    it("returns ok with viewport bounds and default limit, latColumn, lngColumn", () => {
+        const result = validator.validate({
+            tableFqn: "p.d.t",
+            minLng: -74,
+            minLat: 40,
+            maxLng: -73,
+            maxLat: 41,
+        });
+
+        expect(result.isOk()).toBe(true);
+        if (result.isOk()) {
+            expect(result.value.bounds).toEqual({
+                minLng: -74,
+                minLat: 40,
+                maxLng: -73,
+                maxLat: 41,
+            });
+            expect(result.value.limit).toBe(1000);
+            expect(result.value.latColumn).toBe("lat");
+            expect(result.value.lngColumn).toBe("lng");
+        }
+    });
+
+    it("returns error when only some bounds are provided", () => {
+        const result = validator.validate({
+            tableFqn: "p.d.t",
+            minLng: -74,
+            minLat: 40,
+        });
+
+        expect(result.isErr()).toBe(true);
+        if (result.isErr() && result.error.kind === "ValidationError") {
+            expect(result.error.errors.maxLng).toBeDefined();
+            expect(result.error.errors.maxLat).toBeDefined();
+        }
+    });
+
+    it("returns error when minLng >= maxLng", () => {
+        const result = validator.validate({
+            tableFqn: "p.d.t",
+            minLng: -73,
+            minLat: 40,
+            maxLng: -74,
+            maxLat: 41,
+        });
+
+        expect(result.isErr()).toBe(true);
+        if (result.isErr() && result.error.kind === "ValidationError") {
+            expect(
+                result.error.errors.minLng?.some((e) =>
+                    e.message.includes("minLng must be less than maxLng"),
+                ),
+            ).toBe(true);
+        }
+    });
+
+    it("returns error when minLat >= maxLat", () => {
+        const result = validator.validate({
+            tableFqn: "p.d.t",
+            minLng: -74,
+            minLat: 41,
+            maxLng: -73,
+            maxLat: 40,
+        });
+
+        expect(result.isErr()).toBe(true);
+        if (result.isErr() && result.error.kind === "ValidationError") {
+            expect(
+                result.error.errors.minLat?.some((e) =>
+                    e.message.includes("minLat must be less than maxLat"),
+                ),
+            ).toBe(true);
+        }
+    });
+
+    it("returns error when limit exceeds viewport max (5000)", () => {
+        const result = validator.validate({
+            tableFqn: "p.d.t",
+            minLng: -74,
+            minLat: 40,
+            maxLng: -73,
+            maxLat: 41,
+            limit: 10000,
+        });
+
+        expect(result.isErr()).toBe(true);
+        if (result.isErr() && result.error.kind === "ValidationError") {
+            expect(result.error.errors.limit).toBeDefined();
+        }
+    });
+
+    it("returns ok with custom limit, latColumn, lngColumn when using viewport", () => {
+        const result = validator.validate({
+            tableFqn: "p.d.t",
+            minLng: 0,
+            minLat: 0,
+            maxLng: 1,
+            maxLat: 1,
+            limit: 500,
+            latColumn: "latitude",
+            lngColumn: "longitude",
+        });
+
+        expect(result.isOk()).toBe(true);
+        if (result.isOk()) {
+            expect(result.value.limit).toBe(500);
+            expect(result.value.latColumn).toBe("latitude");
+            expect(result.value.lngColumn).toBe("longitude");
+        }
+    });
+
+    it("returns error when latColumn has invalid characters", () => {
+        const result = validator.validate({
+            tableFqn: "p.d.t",
+            minLng: 0,
+            minLat: 0,
+            maxLng: 1,
+            maxLat: 1,
+            latColumn: "lat-column",
+        });
+
+        expect(result.isErr()).toBe(true);
+        if (result.isErr() && result.error.kind === "ValidationError") {
+            expect(result.error.errors.latColumn).toBeDefined();
+        }
+    });
+
+    it("returns default limit (100000) when no bounds", () => {
+        const result = validator.validate({
+            tableFqn: "p.d.t",
+        });
+
+        expect(result.isOk()).toBe(true);
+        if (result.isOk()) {
+            expect(result.value.bounds).toBeUndefined();
+            expect(result.value.limit).toBe(100000);
+        }
+    });
 });
